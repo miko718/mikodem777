@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mikodem - ניהול תורים חכם</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            direction: rtl;
+        }
+
+        .app-container {
+            max-width: 420px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            box-shadow: 0 0 40px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .map-container {
+            width: 100%;
+            height: 300px;
+            position: relative;
+            overflow: hidden;
+            border-bottom: 3px solid #2196f3;
+        }
+
+        #google-map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .map-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            font-size: 13px;
+            z-index: 1000;
+        }
+
+        .distance-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .distance-info .icon {
+            color: #2196f3;
+        }
+        .icon-svg { flex-shrink: 0; }
+
+        .status-card {
+            margin: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            border-radius: 15px;
+            border-right: 5px solid #ff9800;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .status-card h2 {
+            color: #e65100;
+            font-size: 18px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .eta-info {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+
+        .eta-time {
+            font-size: 28px;
+            font-weight: bold;
+            color: #f44336;
+            margin: 5px 0;
+        }
+
+        .delay-info {
+            color: #d32f2f;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .action-zone {
+            margin: 20px;
+        }
+
+        .action-btn {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .primary-btn {
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .primary-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        .secondary-btn {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .secondary-btn:hover {
+            background: #f5f5f5;
+        }
+
+        .tab-navigation {
+            display: flex;
+            background: #f5f5f5;
+            padding: 5px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: #667eea;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .notification {
+            background: #4caf50;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            animation: slideDown 0.5s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-100%);
+            }
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        .timer-bar {
+            margin: 20px;
+            padding: 15px;
+            background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+            border-radius: 10px;
+            border-right: 4px solid #ff9800;
+        }
+
+        .timer-text {
+            text-align: center;
+            font-weight: bold;
+            color: #e65100;
+            margin-bottom: 10px;
+        }
+
+        .timer-progress {
+            height: 8px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .timer-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff9800, #f57c00);
+            transition: width 1s linear;
+        }
+
+        .swap-details {
+            margin: 20px;
+            padding: 15px;
+            background: #e8f5e9;
+            border-radius: 10px;
+            border-right: 4px solid #4caf50;
+            line-height: 1.8;
+        }
+
+        .success-screen {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #4caf50, #45a049);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            animation: scaleIn 0.5s ease;
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0);
+            }
+            to {
+                transform: scale(1);
+            }
+        }
+
+        .business-dashboard {
+            padding: 20px;
+        }
+
+        .queue-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .queue-item {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            border-right: 5px solid #4caf50;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .queue-item.delayed {
+            border-right-color: #f44336;
+        }
+
+        .queue-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status-badge.green {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-badge.red {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .api-key-setup {
+            padding: 20px;
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            margin: 20px;
+        }
+
+        .api-key-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-top: 10px;
+            font-family: monospace;
+        }
+
+        .setup-btn {
+            margin-top: 10px;
+            padding: 12px 24px;
+            background: #ffc107;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .setup-btn:hover {
+            background: #ffb300;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const Icon = ({ size = 24, color = 'currentColor', children }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon-svg">{children}</svg>
+        );
+        const MapPin = (p) => <Icon {...p}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></Icon>;
+        const Clock = (p) => <Icon {...p}><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></Icon>;
+        const CheckCircle = (p) => <Icon {...p}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><path d="m9 11 3 3L22 4" /></Icon>;
+        const AlertTriangle = (p) => <Icon {...p}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><path d="M12 9v4" /><path d="M12 17h.01" /></Icon>;
+        const Navigation = (p) => <Icon {...p}><polygon points="3 11 22 2 13 21 11 13 3 11" /></Icon>;
+
+        function App() {
+            const [view, setView] = useState('client');
+            const [clientView, setClientView] = useState('delay');
+            const [notification, setNotification] = useState(null);
+            const [timer, setTimer] = useState(60);
+            const [apiKey, setApiKey] = useState('');
+            const [mapLoaded, setMapLoaded] = useState(false);
+            const [distanceData, setDistanceData] = useState(null);
+            const mapRef = useRef(null);
+            const googleMapRef = useRef(null);
+
+            // מיקומים לדוגמה (תל אביב - העסק, רמת גן - הלקוח)
+            const businessLocation = { lat: 32.0853, lng: 34.7818 }; // תל אביב
+            const userLocation = { lat: 32.0853, lng: 34.8353 }; // רמת גן
+
+            const [appointments, setAppointments] = useState([
+                { id: 1, name: 'יוסי כהן', time: '10:00', status: 'on-time', distance: '2.3' },
+                { id: 2, name: 'שרה לוי', time: '10:30', status: 'delayed', distance: '8.5', delay: '15' },
+                { id: 3, name: 'דנה לוי', time: '11:00', status: 'on-time', distance: '1.2' },
+                { id: 4, name: 'מיכל אברהם', time: '11:30', status: 'on-time', distance: '3.7' }
+            ]);
+
+            // טעינת Google Maps API
+            const loadGoogleMapsScript = (key) => {
+                if (window.google && window.google.maps) {
+                    setMapLoaded(true);
+                    return;
+                }
+
+                const script = document.createElement('script');
+                script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places,geometry&language=he`;
+                script.async = true;
+                script.defer = true;
+                script.onload = () => setMapLoaded(true);
+                script.onerror = () => {
+                    alert('שגיאה בטעינת Google Maps API. אנא בדוק את מפתח ה-API.');
+                    setMapLoaded(false);
+                };
+                document.head.appendChild(script);
+            };
+
+            // אתחול המפה
+            const initMap = () => {
+                if (!window.google || !mapRef.current) return;
+
+                const map = new google.maps.Map(mapRef.current, {
+                    center: businessLocation,
+                    zoom: 13,
+                    styles: [
+                        {
+                            featureType: 'all',
+                            elementType: 'geometry',
+                            stylers: [{ saturation: -20 }]
+                        }
+                    ],
+                    mapTypeControl: false,
+                    streetViewControl: false,
+                    fullscreenControl: false
+                });
+
+                googleMapRef.current = map;
+
+                // סמן העסק
+                new google.maps.Marker({
+                    position: businessLocation,
+                    map: map,
+                    title: 'סלון יפה',
+                    icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 12,
+                        fillColor: '#f44336',
+                        fillOpacity: 1,
+                        strokeColor: '#ffffff',
+                        strokeWeight: 3
+                    }
+                });
+
+                // סמן המשתמש
+                const userMarker = new google.maps.Marker({
+                    position: userLocation,
+                    map: map,
+                    title: 'המיקום שלך',
+                    icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 10,
+                        fillColor: '#2196f3',
+                        fillOpacity: 1,
+                        strokeColor: '#ffffff',
+                        strokeWeight: 3
+                    }
+                });
+
+                // הצגת מסלול
+                const directionsService = new google.maps.DirectionsService();
+                const directionsRenderer = new google.maps.DirectionsRenderer({
+                    map: map,
+                    suppressMarkers: true,
+                    polylineOptions: {
+                        strokeColor: '#667eea',
+                        strokeWeight: 5,
+                        strokeOpacity: 0.8
+                    }
+                });
+
+                const request = {
+                    origin: userLocation,
+                    destination: businessLocation,
+                    travelMode: google.maps.TravelMode.DRIVING,
+                    drivingOptions: {
+                        departureTime: new Date(),
+                        trafficModel: 'bestguess'
+                    }
+                };
+
+                directionsService.route(request, (result, status) => {
+                    if (status === 'OK') {
+                        directionsRenderer.setDirections(result);
+                        
+                        const route = result.routes[0].legs[0];
+                        setDistanceData({
+                            distance: route.distance.text,
+                            duration: route.duration.text,
+                            durationInTraffic: route.duration_in_traffic ? route.duration_in_traffic.text : route.duration.text
+                        });
+                    }
+                });
+
+                // התאמת המפה להכיל את שני הנקודות
+                const bounds = new google.maps.LatLngBounds();
+                bounds.extend(businessLocation);
+                bounds.extend(userLocation);
+                map.fitBounds(bounds);
+            };
+
+            useEffect(() => {
+                if (mapLoaded && view === 'client' && clientView === 'delay') {
+                    initMap();
+                }
+            }, [mapLoaded, view, clientView]);
+
+            const showNotification = (message) => {
+                setNotification(message);
+                setTimeout(() => setNotification(null), 3000);
+            };
+
+            useEffect(() => {
+                if (timer > 0 && clientView === 'delay') {
+                    const interval = setInterval(() => {
+                        setTimer(t => t - 1);
+                    }, 1000);
+                    return () => clearInterval(interval);
+                }
+            }, [timer, clientView]);
+
+            const handleSwapAccept = () => {
+                setClientView('success');
+                showNotification('🎉 התור שלך עודכן בהצלחה!');
+                setTimer(60);
+
+                setAppointments(prev => {
+                    const updated = [...prev];
+                    const temp = updated[1];
+                    updated[1] = updated[2];
+                    updated[2] = temp;
+                    return updated;
+                });
+            };
+
+            const handleSwapDecline = () => {
+                setClientView('normal');
+                showNotification('📱 בעל העסק קיבל עדכון שאתה בדרך');
+            };
+
+            const handleApiKeySubmit = () => {
+                if (apiKey.trim()) {
+                    loadGoogleMapsScript(apiKey);
+                } else {
+                    alert('אנא הזן מפתח API תקין');
+                }
+            };
+
+            if (!mapLoaded) {
+                return (
+                    <div className="app-container">
+                        <div className="header">
+                            <h1>Mikodem</h1>
+                            <p>ניהול תורים חכם בזמן אמת</p>
+                        </div>
+                        <div className="api-key-setup">
+                            <h2 style={{marginBottom: '10px', color: '#856404'}}>🔑 הגדרת Google Maps API</h2>
+                            <p style={{marginBottom: '15px', fontSize: '14px', lineHeight: '1.6'}}>
+                                כדי להשתמש במפות Google, אנא הזן את מפתח ה-API שלך.<br/>
+                                <strong>איפה משיגים מפתח?</strong><br/>
+                                1. היכנס ל-<a href="https://console.cloud.google.com" target="_blank" style={{color: '#667eea'}}>Google Cloud Console</a><br/>
+                                2. צור פרויקט חדש או בחר קיים<br/>
+                                3. הפעל את APIs הבאים:<br/>
+                                   • Maps JavaScript API<br/>
+                                   • Directions API<br/>
+                                   • Distance Matrix API<br/>
+                                   • Places API<br/>
+                                   • Geocoding API<br/>
+                                4. צור מפתח API בסעיף "Credentials"
+                            </p>
+                            <input 
+                                type="text"
+                                className="api-key-input"
+                                placeholder="הדבק כאן את מפתח ה-API..."
+                                value={apiKey}
+                                onChange={(e) => setApiKey(e.target.value)}
+                            />
+                            <button className="setup-btn" onClick={handleApiKeySubmit}>
+                                ✓ אישור והמשך
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="app-container">
+                    <div className="header">
+                        <h1>Mikodem</h1>
+                        <p>ניהול תורים חכם בזמן אמת</p>
+                    </div>
+
+                    <div className="tab-navigation">
+                        <button 
+                            className={`tab-btn ${view === 'client' ? 'active' : ''}`}
+                            onClick={() => setView('client')}
+                        >
+                            👤 מסך לקוח
+                        </button>
+                        <button 
+                            className={`tab-btn ${view === 'business' ? 'active' : ''}`}
+                            onClick={() => setView('business')}
+                        >
+                            🏢 מסך בעל עסק
+                        </button>
+                    </div>
+
+                    {notification && (
+                        <div className="notification">
+                            {notification}
+                        </div>
+                    )}
+
+                    {view === 'client' && (
+                        <>
+                            {clientView === 'delay' && (
+                                <>
+                                    <div className="map-container">
+                                        <div id="google-map" ref={mapRef}></div>
+                                        {distanceData && (
+                                            <div className="map-overlay">
+                                                <div className="distance-info">
+                                                    <MapPin size={16} className="icon" />
+                                                    <span>{distanceData.distance} | {distanceData.durationInTraffic}</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="status-card">
+                                        <h2>
+                                            <AlertTriangle size={20} />
+                                            נראה שאתה תקוע בפקק 🚦
+                                        </h2>
+                                        <div className="eta-info">
+                                            <div style={{color: '#666', fontSize: '14px'}}>זמן הגעה משוער:</div>
+                                            <div className="eta-time">10:45</div>
+                                            <div className="delay-info">איחור של 15 דקות</div>
+                                            {distanceData && (
+                                                <div style={{marginTop: '10px', fontSize: '13px', color: '#666'}}>
+                                                    📍 מרחק: {distanceData.distance}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="timer-bar">
+                                        <div className="timer-text">
+                                            ההצעה תקפה ל-{timer} שניות...
+                                        </div>
+                                        <div className="timer-progress">
+                                            <div 
+                                                className="timer-fill" 
+                                                style={{width: `${(timer/60)*100}%`}}
+                                            ></div>
+                                        </div>
+                                    </div>
+
+                                    <div className="swap-details">
+                                        <p><strong>💡 הצעה חכמה:</strong></p>
+                                        <p>התור שלך יתחיל ב-<strong>11:00</strong></p>
+                                        <p><strong>דנה לוי</strong> תיכנס במקומך עכשיו (היא כבר קרובה לעסק)</p>
+                                    </div>
+
+                                    <div className="action-zone">
+                                        <button className="action-btn primary-btn" onClick={handleSwapAccept}>
+                                            <CheckCircle size={20} />
+                                            הזז אותי לתור הבא
+                                        </button>
+                                        <button className="action-btn secondary-btn" onClick={handleSwapDecline}>
+                                            <Navigation size={20} />
+                                            אסתדר, אגיע בהקדם
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+
+                            {clientView === 'success' && (
+                                <div className="success-screen">
+                                    <div className="success-icon">
+                                        <CheckCircle size={40} color="white" />
+                                    </div>
+                                    <h2>התור עודכן בהצלחה! ✅</h2>
+                                    <p style={{marginTop: '20px'}}>
+                                        <strong>התור החדש שלך:</strong><br/>
+                                        11:00 - סלון יפה<br/>
+                                        רח' הרצל 45, תל אביב
+                                    </p>
+                                    <p style={{marginTop: '15px', color: '#4caf50'}}>
+                                        תקבל תזכורת 10 דקות לפני התור
+                                    </p>
+                                    <button 
+                                        className="action-btn primary-btn"
+                                        style={{marginTop: '30px'}}
+                                        onClick={() => setClientView('delay')}
+                                    >
+                                        חזרה למסך ראשי
+                                    </button>
+                                </div>
+                            )}
+
+                            {clientView === 'normal' && (
+                                <div className="success-screen">
+                                    <div style={{
+                                        width: '80px',
+                                        height: '80px',
+                                        background: 'linear-gradient(135deg, #2196f3, #1976d2)',
+                                        borderRadius: '50%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        margin: '0 auto 20px'
+                                    }}>
+                                        <Navigation size={40} color="white" />
+                                    </div>
+                                    <h2>נהיגה בטוחה! 🚗</h2>
+                                    <p style={{marginTop: '20px'}}>
+                                        בעל העסק קיבל עדכון שאתה בדרך.<br/>
+                                        ננסה לסדר את התור בהתאם להגעתך.
+                                    </p>
+                                    <button 
+                                        className="action-btn primary-btn"
+                                        style={{marginTop: '30px'}}
+                                        onClick={() => setClientView('delay')}
+                                    >
+                                        חזרה למסך ראשי
+                                    </button>
+                                </div>
+                            )}
+                        </>
+                    )}
+
+                    {view === 'business' && (
+                        <div className="business-dashboard">
+                            <h2 style={{marginBottom: '20px'}}>
+                                <Clock size={24} style={{verticalAlign: 'middle', marginLeft: '8px'}} />
+                                תורים להיום
+                            </h2>
+                            
+                            <div className="queue-list">
+                                {appointments.map((apt, index) => (
+                                    <div key={apt.id} className={`queue-item ${apt.status}`}>
+                                        <div className="queue-item-header">
+                                            <div>
+                                                <strong>{apt.name}</strong>
+                                                <div style={{fontSize: '14px', color: '#666'}}>
+                                                    {apt.time}
+                                                </div>
+                                            </div>
+                                            <span className={`status-badge ${apt.status === 'on-time' ? 'green' : 'red'}`}>
+                                                {apt.status === 'on-time' ? '✓ בזמן' : `⚠ איחור ${apt.delay} דק׳`}
+                                            </span>
+                                        </div>
+                                        <div style={{fontSize: '13px', color: '#999', marginTop: '8px'}}>
+                                            📍 מרחק: {apt.distance} ק״מ
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div style={{
+                                marginTop: '30px',
+                                padding: '15px',
+                                background: '#e3f2fd',
+                                borderRadius: '10px',
+                                textAlign: 'center'
+                            }}>
+                                <div style={{fontSize: '14px', color: '#1976d2', marginBottom: '5px'}}>
+                                    📊 סטטיסטיקות היום
+                                </div>
+                                <div style={{fontSize: '24px', fontWeight: 'bold', color: '#1565c0'}}>
+                                    4 תורים | 1 איחור
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
